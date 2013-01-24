@@ -1,0 +1,9 @@
+{
+	"name":"almateos/alma-lib",
+	"type":"library",
+	"autoload": {
+		"classmap": [
+			"lib"
+		]
+	}
+}
