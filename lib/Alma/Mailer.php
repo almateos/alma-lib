@@ -8,14 +8,13 @@ use Zend_Mail,
 /**
  * @author NMO <nico@multeegaming.com> 
  */
-class Mailer extends Zend_Mail {
+class Mailer {
 
     protected $_transport;
     protected $_config;
 
     /** @param array $config */
 	public function __construct(array $config) {
-		parent::__construct('utf-8');
         $this->_config = $config;
         if($config['transport']['type'] === 'smtp') {
             $this->_transport = new Zend_Mail_Transport_Smtp($config['transport']['host'], $config['transport']['config']);
@@ -27,37 +26,47 @@ class Mailer extends Zend_Mail {
             $this->_transport = new Zend_Mail_Transport_File($config['transport']['options']);
 
         } else trigger_error('unsuported type of transport: "' . $config['transport']['type'] . '"');
+
+        if(isset($config['defaults'])){
+            if(isset($config['defaults']['from'])) Zend_Mail::setDefaultFrom($config['defaults']['from']['email'], $config['defaults']['from']['name']);
+            if(isset($config['defaults']['reply-to'])) Zend_Mail::setDefaultReplyTo($config['defaults']['reply-to']['email'], $config['defaults']['reply-to']['name']);
+        }
 	}
 
     /**
-     * @param string $title 
-     * @param string $message 
-     * @param string $to 
-     * @param string $pseudo 
+     * @param $title
+     * @param $message
+     * @param array $to
+     * @param array $from
      */
-	public function sendTextMail($title, $message, $to, $pseudo) {
-		$this->setSubject($title);
-		$this->setBodyHtml($message);
-		$this->addTo($to, $pseudo);
-
-        $this->send($this->_transport);
+    public function sendTextMail($title, $message, array $to = array(), array $from = array()) {
+        $mail = new Zend_Mail('utf-8');
+        $mail->setSubject($title);
+        $mail->setBodyHtml($message);
+        $mail->addTo($to['email'], @$to['name'] ? $to['name'] : null);
+        if(isset($from['email']) && $from['email']) $mail->setFrom($from['email'], @$from['name'] ? $from['name'] : null );
+        $mail->send($this->_transport);
 	}
 
     /**
-     * @param string $title 
-     * @param string $templatePath 
-     * @param array $changes 
+     * @param $title
+     * @param $templatePath
+     * @param array $templateVars
+     * @param array $to
+     * @param array $from
      */
-    public function sendTemplateMail($title, $templatePath, array $changes = array()) {
-        if(!file_exists($templatePath)) {
-            $file = $this->_config['template_folder'] . '/' . $templatePath;
+    public function sendTemplateMail($title, $templatePath, array $templateVars = array(), array $to = array(), array $from = array()) {
+        $file = $this->_config['template_folder'] . '/' . $templatePath;
+        if(file_exists($file)){
             $message = file_get_contents($file);
-            if (count($changes) > 0) {
-                foreach ($changes as $key => $value) {
+            if (count($templateVars) > 0) {
+                foreach ($templateVars as $key => $value) {
                     $message = preg_replace('#' . $key . '#', $value, $message);
                 }
             }
-            $this->sendText($title, $message, $to, $pseudo, $from);
+            $this->sendTextMail($title, $message, $to, $from);
+        }else{
+            trigger_error('mail template '.$file.' not found');
         }
     }
 }
