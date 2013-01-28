@@ -61,7 +61,7 @@ class Mailer {
             $message = file_get_contents($file);
             if (count($templateVars) > 0) {
                 foreach ($templateVars as $key => $value) {
-                    $message = preg_replace('#' . $key . '#', $value, $message);
+                    $message = preg_replace('%' . $key . '%', $value, $message);
                 }
             }
             $this->sendTextMail($title, $message, $to, $from);
