@@ -63,6 +63,7 @@ class Alma_Form extends Zend_Form{
             call_user_func_array(array($form, 'addElement'), $datum);
 
             $optKey = in_array($datum['element'], array("radio", "select")) ? 'multiOptions' :'value';
+            if($optKey === 'multiOptions' && is_null($datum['options']['value'])) $datum['options']['value'] = array();
             $option[$optKey] = $datum;
             $element = $form->getElement($datum['name']);
             if(array_key_exists('value', $datum['options'])) $element->{'set' . ucfirst($optKey)}($datum['options']['value']);
