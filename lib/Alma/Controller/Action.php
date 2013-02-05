@@ -5,14 +5,14 @@
 namespace Alma\Controller;
 
 use Zend_Controller_Action,
-\DateTime,
-\DateInterval,
-\Multee_Mail,
-DomainException;
+    \DateTime,
+    \DateInterval,
+    \Multee_Mail,
+    DomainException;
 
 abstract class Action extends \Zend_Controller_Action
 {
-    /** @var \Multee\Event\Manager */
+    /** @var \Incube\Event\EventManager */
     protected $events;
 
     /** @var \Doctrine\ODM\MongoDB\DocumentManager */
@@ -22,7 +22,7 @@ abstract class Action extends \Zend_Controller_Action
     protected $orm;
 
     /** @var \Documents\User|false */
-    protected $user = false;
+    protected $currentUser = false;
 
     /** @var array */
     protected $options;
@@ -48,8 +48,8 @@ abstract class Action extends \Zend_Controller_Action
         $this->odm->lazyFlush = false;
         $this->lazyRedirect = false;
 
-        //if (!is_null($this->sessions['identity']->userId)) {
-            //$this->view->user = $this->user = $this->odm->getRepository('\Documents\User')->find($this->sessions['identity']->userId);
+        //if (!is_null($this->session->userId) && is_int($this->sessions->userId)) {
+            //$this->view->currentUser = $this->currentUser = $this->odm->getRepository('\Documents\User')->find($this->sessions['identity']->userId);
         //}
 
         //$this->events->trigger(__FUNCTION__, $this, array('odm' => $this->odm));
