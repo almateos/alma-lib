@@ -27,8 +27,7 @@ abstract class Action extends \Zend_Controller_Action
     /** @var array */
     protected $options;
 
-    public function init()
-    {
+    public function init() {
         /** @var $bootstrap \Bootstrap */
         $bootstrap = $this->getFrontController()->getParam('bootstrap');
         $this->options = $bootstrap->getOptions();
@@ -42,8 +41,7 @@ abstract class Action extends \Zend_Controller_Action
     }
 
 
-    public function preDispatch()
-    {
+    public function preDispatch() {
         $this->orm->lazyFlush = false;
         $this->odm->lazyFlush = false;
         $this->lazyRedirect = false;
@@ -55,8 +53,7 @@ abstract class Action extends \Zend_Controller_Action
         //$this->events->trigger(__FUNCTION__, $this, array('odm' => $this->odm));
     }
 
-    public function postDispatch()
-    {
+    public function postDispatch() {
         if ($this->orm->lazyFlush) $this->orm->flush();
         if ($this->odm->lazyFlush) $this->odm->flush();
         // Implement lazy redirect everywhere
