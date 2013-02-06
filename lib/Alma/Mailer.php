@@ -23,7 +23,7 @@ class Mailer {
             if(!file_exists($config['transport']['options']['path']))
                 if(!mkdir($config['transport']['options']['path']))
                     trigger_error('"' . $config['transport']['options']['path'] . '" is not a valid file');
-                chmod($config['transport']['options']['path'], 777);
+                chmod($config['transport']['options']['path'], 0777);
             $this->_transport = new Zend_Mail_Transport_File($config['transport']['options']);
 
         } else trigger_error('unsuported type of transport: "' . $config['transport']['type'] . '"');
