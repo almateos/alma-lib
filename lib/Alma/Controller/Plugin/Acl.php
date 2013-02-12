@@ -46,10 +46,11 @@ class Acl extends Zend_Controller_Plugin_Abstract
         }
 
         if($redirectUri) {
-            $r = new \Zend_Controller_Action_Helper_Redirector;
-            $r->gotoUrl($redirectUri)->redirectAndExit();
+            $this->_response->setRedirect($redirectUri);
+            //$r = new \Zend_Controller_Action_Helper_Redirector;
+            //$r->gotoUrl($redirectUri)->redirectAndExit();
         // Tracking & Banning system
-        } else $events->trigger(__FUNCTION__, $this, array('odm' => $odm, 'myUser' => $myUser, 'request' => $request));
+        } else $events->trigger(__FUNCTION__, $this, array('odm' => $odm, 'myUser' => $myUser, 'request' => $request, 'response' => $this->_response));
     }
 
 }

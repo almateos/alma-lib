@@ -66,8 +66,6 @@ class Mailer {
                 }
             }
             $this->sendTextMail($title, $message, $to, $from);
-        }else{
-            trigger_error('mail template '.$file.' not found');
-        }
+        } else trigger_error('mail template '.$file.' not found');
     }
 }
