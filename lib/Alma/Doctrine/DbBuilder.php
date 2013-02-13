@@ -17,33 +17,27 @@ use Doctrine\ODM\MongoDB\Mapping\Driver\AnnotationDriver,
 abstract class DbBuilder {
 
     public static function constructOdm(Zend_Config $config) {
-        $ODMConfig = new Configuration();
-        if(isset($config->options)) {
-            foreach ( $config->options->toArray() as $key => $value) {
-                $ODMConfig->{"set" . ucfirst($key)}($value);
-            }
-        }
+        $odmConfig = new Configuration();
 
+        // Could be really nice to be able to init from an array ....
+        if(isset($config->options))
+            foreach ($config->options->toArray() as $key => $value) 
+                $odmConfig->{"set" . ucfirst($key)}($value);
+
+        // To allow simple annotations
         $reader = new SimpleAnnotationReader();
         $reader->addNamespace($config->reader_namespace);
+
+        // Static call to autoload annotation classes ...
         AnnotationDriver::registerAnnotationClasses();
 
         $driver = new AnnotationDriver($reader, $config->documents_path);
-        if(isset($config->driver)) {
-            foreach ($config->driver->toArray() as $key => $value) { $driver->{"set" . ucfirst($key)}($value); }
-        }
-        $ODMConfig->setMetadataDriverImpl($driver);
+        $odmConfig->setMetadataDriverImpl($driver);
 
-        if($config->connection->options) {
-            if($config->connection->options->bool) {
-                foreach ($config->connection->options->bool as $key => $option) { $config->connection->options->$key = (bool) $option; }
-                unset($config->connection->options->bool);
-            }
-        }
-        $connectionOptions = ($config->connection->options) ? $config->connection->options->toArray() : array();
+        $connectionOptions = (isset($config->connection->options)) ? $config->connection->options->toArray() : array();
         $connection = new Connection($config->connection->server, $connectionOptions);
 
-        return DocumentManager::create($connection, $ODMConfig);
+        return DocumentManager::create($connection, $odmConfig);
     }
 
     public static function constructOrm(Zend_Config $config) {
