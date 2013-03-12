@@ -1,7 +1,9 @@
 <?php
-namespace XSolla;
+namespace Alma\XSolla;
 
 use SimpleXMLElement,
+    ObjectValues\PayResponseCodes,
+    ObjectValues\CancelResponseCodes,
     Exception;
 class CashPayment {
 
@@ -26,6 +28,8 @@ class CashPayment {
       $this->_fromIp = $fromIp;
       $this->_secretKey = $secretKey;
       $this->_params = $params;
+      
+      $this->_isValidRequest();
   }
 
   public function isValidRequest() {
@@ -57,9 +61,9 @@ class CashPayment {
       if($msg) $this->_error = $msg;
   }
 
-  protected function getParams() {
+  public function getParams() {
     $result = array();
-    foreach(self::$_paramsSet[$params['command']] as $key) {
+    foreach(self::$_paramsSet[$this->_command] as $key) {
         $result[$key] = $this->_params[$key];
     }
     return $result;
