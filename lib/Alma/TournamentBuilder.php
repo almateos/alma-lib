@@ -92,7 +92,7 @@ class TournamentBuilder
             while($challengesToCreate > 0) {
                 $challenge = new Challenge();
                 $challenge->fromArray(array(
-                            'round'        => $roundNumber,
+                            'round'         => $roundNumber,
                             'status'        => ChallengeStates::INITIAL,
                             'position'      => $challengesToCreate,
                             //->setPosition($tournament->getType() == TournamentValues::TYPE_1VS1 ? 0 : $challengesToCreate)
@@ -171,7 +171,8 @@ class TournamentBuilder
                         'participants' => $participants,
                         'challenges' => $challenges,
                         ));
-            $tournament->setRule('rounds', $nbRounds );
+            //$tournament->setRule('rounds', $nbRounds );
+            $tournament->setRounds($nbRounds);
 
             // distribution
             // TODO: should be an optional rule
