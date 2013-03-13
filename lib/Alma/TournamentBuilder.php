@@ -4,6 +4,7 @@ use Documents\Challenge,
     Documents\Challenger,
     Documents\Tournament,
     Documents\TournamentParticipant,
+    Documents\TournamentRegistration,
     ObjectValues\TournamentStates,
     ObjectValues\TournamentTypes,
     ObjectValues\TournamentRules,
@@ -143,8 +144,9 @@ class TournamentBuilder
      * @static
      * @return void
      */
-    public static function create(array $game, array $participants, $type, array $options = array()) {
-        $rules = array_merge($options, TournamentRules::getConfig($type));
+    public static function create(TournamentRegistration $registration, array $participants, $type, array $options = array()) {
+        //$game = $registration->getGame();
+        $rules = array_merge($registration->getRules(), TournamentRules::getConfig($type));
         $result = self::_checkRequirements($participants, $rules);
         if($result['status']) {
 
@@ -166,17 +168,18 @@ class TournamentBuilder
 
             $tournament = new \Documents\Tournament();
             $tournament->fromArray(array(
-                        'game' => $game,
+                        //'game' => $game,
                         'type' => $type,
                         'participants' => $participants,
                         'challenges' => $challenges,
+                        'registration_id' => $registration->getId(),
                         ));
             //$tournament->setRule('rounds', $nbRounds );
             $tournament->setRounds($nbRounds);
 
             // distribution
-            // TODO: should be an optional rule
-            $tournament->setRule('distribution', self::_calculatePrizeDistribution($tournament->getRule('rounds')));
+            // TODO: should be an optional rule defined from outside
+            $registration->setRule('distribution', self::_calculatePrizeDistribution($tournament->getRounds()));
 
             //set tournament as launched
             return $tournament;
