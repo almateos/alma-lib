@@ -17,7 +17,7 @@ class TournamentBuilder
      *
      * @return array
      */
-    // TODO: Prize distribution calculation is variable dependanding tounament type, it should be in some tournamentType's lib
+    // TODO: Prize distribution calculation is variable dependanding tounament type, it should be in some tournamentType's lib or at least in a separate Object Value
     protected static function _calculatePrizeDistribution($rounds){
 
         $repartition = array(
@@ -63,10 +63,8 @@ class TournamentBuilder
     protected static function _createChallengers($participants) {
         //create challengers;
         $challengers = array();
-        //$participants = array();
         foreach($participants as $participant){
-            $participants[] = $participant;
-            $challenger = new Challenger();
+            $challenger = new TournamentChallenger();
             $challenger->fromArray(array(
                        'status'     => \ObjectValues\ChallengerStatus::INITIAL,
                        'player_id'  => $participant->getPlayerId()
@@ -81,8 +79,6 @@ class TournamentBuilder
 
         //TODO: We are a bit short in time now, but round should be calculated out of rules, example: TournamentRules::getConfig(TournamentTypes::XvsX)
 
-
-
         //create challenges tree
         $challenges = array();
 
@@ -91,10 +87,10 @@ class TournamentBuilder
             $roundNumber = $nbRounds - $i + 1;
 
             while($challengesToCreate > 0) {
-                $challenge = new Challenge();
+                $challenge = new TournamentChallenge();
                 $challenge->fromArray(array(
                             'round'         => $roundNumber,
-                            'status'        => ChallengeStates::INITIAL,
+                            'state'        => ChallengeStates::INITIAL,
                             'position'      => $challengesToCreate,
                             //->setPosition($tournament->getType() == TournamentValues::TYPE_1VS1 ? 0 : $challengesToCreate)
                             //'tournament_id' => $tournament->getId(),
@@ -115,13 +111,13 @@ class TournamentBuilder
                 if( count($challenge->getChallengers()) == 1){
                     $challenge->setStartedAt(new \DateTime())
                         ->setFinishedAt(new \DateTime())
-                        ->setStatus(ChallengeStates::FINISHED);
+                        ->setState(ChallengeStates::FINISHED);
                     foreach($challenge->getChallengers() as $challenger){
                         $challenger->setStatus(ChallengerStatus::WON);
                     }
                 } else {
                     $challenge->setStartedAt(new \DateTime())
-                        ->setStatus( ChallengeStates::READY );
+                        ->setState( ChallengeStates::READY );
                 }
             }
 
@@ -144,13 +140,14 @@ class TournamentBuilder
      * @static
      * @return void
      */
-    public static function create(TournamentRegistration $registration, array $participants, $type, array $options = array()) {
+    public static function create(TournamentRegistration $registration, $type, array $options = array()) {
         //$game = $registration->getGame();
         $rules = array_merge($registration->getRules(), TournamentRules::getConfig($type));
+        $participants = $registration->getParticipants();
         $result = self::_checkRequirements($participants, $rules);
         if($result['status']) {
 
-            $nbRounds = strlen(decbin(count(participants)) -1);
+            $nbRounds = strlen(decbin(count($participants)) -1);
             $challenges  = self::_createChallenges($nbRounds);
             $challengers = self::_createChallengers($participants);
 
@@ -160,9 +157,9 @@ class TournamentBuilder
             while(!empty($challengers)) {
                 $challenger = array_pop($challengers);
                 $challenges[$i]->addChallenger($challenger);
-                $challenges[$i]->setStatus(ChallengeStates::READY);
+                $challenges[$i]->setState(ChallengeStates::READY);
 
-                if (++$i >= count($firstRoundChallenges)) $i = 0;
+                if (++$i >= count($challenges)) $i = 0;
             }
 
 
@@ -170,7 +167,6 @@ class TournamentBuilder
             $tournament->fromArray(array(
                         //'game' => $game,
                         'type' => $type,
-                        'participants' => $participants,
                         'challenges' => $challenges,
                         'registration_id' => $registration->getId(),
                         ));
