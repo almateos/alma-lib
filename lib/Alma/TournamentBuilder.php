@@ -1,7 +1,7 @@
 <?php
 namespace Alma;
-use Documents\Challenge,
-    Documents\Challenger,
+use Documents\TournamentChallenge,
+    Documents\TournamentChallenger,
     Documents\Tournament,
     Documents\TournamentParticipant,
     Documents\TournamentRegistration,
@@ -68,7 +68,7 @@ class TournamentBuilder
             $participants[] = $participant;
             $challenger = new Challenger();
             $challenger->fromArray(array(
-                       'status'     => \ObjectValues\ChallengerStates::INITIAL,
+                       'status'     => \ObjectValues\ChallengerStatus::INITIAL,
                        'player_id'  => $participant->getPlayerId()
                        ));
             $challengers[] = $challenger;
@@ -117,7 +117,7 @@ class TournamentBuilder
                         ->setFinishedAt(new \DateTime())
                         ->setStatus(ChallengeStates::FINISHED);
                     foreach($challenge->getChallengers() as $challenger){
-                        $challenger->setStatus(ChallengerStates::WON);
+                        $challenger->setStatus(ChallengerStatus::WON);
                     }
                 } else {
                     $challenge->setStartedAt(new \DateTime())
