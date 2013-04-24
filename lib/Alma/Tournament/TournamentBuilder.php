@@ -1,9 +1,9 @@
 <?php
-namespace Alma;
+namespace Alma\Tournament;
 use Documents\TournamentChallenge,
     Documents\TournamentChallenger,
     Documents\Tournament,
-    Documents\TournamentParticipant,
+    Documents\TournamentPayment,
     Documents\TournamentRegistration,
     ObjectValues\TournamentStates,
     ObjectValues\TournamentTypes,
@@ -35,12 +35,16 @@ class TournamentBuilder
         return $repartition[$rounds - 1];
     }
 
-    protected static function _checkRequirements($participants, array $rules) {
-        $msg = false;
-        
-        foreach($participants as $participant) {
-            if(!($participant instanceof TournamentParticipant)) {
-                $msg = 'Invalid argument type, TournamentBuilder::create() takes as second parameter an array of TournamentParticipant';
+    protected static function _checkRequirements($payments, array $rules) {
+        $msg = array();
+
+        if(count($payments) < 2) {
+            $msg[] = 'Invalid number of participants, need at least 2 to create a tourament, got ' . count($payments);
+        }
+
+        foreach($payments as $payment) {
+            if(!($payment instanceof TournamentPayment)) {
+                $msg[] = 'Invalid argument type, TournamentBuilder::create() takes as second parameter an array of TournamentPayment';
                 break;
             }
         }
@@ -48,26 +52,27 @@ class TournamentBuilder
         if(array_key_exists(TournamentRules::TOTAL_PLAYER_NUM, $rules)) {
             $playerNum = $rules[TournamentRules::TOTAL_PLAYER_NUM];
             if(is_array($playerNum)) {
-                if(array_key_exists('min', $playerNum) && $playerNum['min'] > count($participants)) $msg = 'Minimum participant number not reached, tournament has not been created';
-                if(array_key_exists('max', $playerNum) && $playerNum['max'] < count($participants)) $msg = 'Maximum participant number is exceeded, tournament has not been created';
+                if(array_key_exists('min', $playerNum) && $playerNum['min'] > count($payments)) $msg[] = 'Minimum payment number not reached, tournament has not been created';
+                if(array_key_exists('max', $playerNum) && $playerNum['max'] < count($payments)) $msg[] = 'Maximum payment number is exceeded, tournament has not been created';
             } else {
-                if((int) $playerNum !== count($participants)) $msg = 'Invalid participant number, ' . $playerNum . ' expected, ' . count($participants) . ' given';
+                if((int) $playerNum !== count($payments)) $msg[] = 'Invalid payment number, ' . $playerNum . ' expected, ' . count($payments) . ' given';
             }
         } 
 
-            //$this->_cancelTournament(array('error'=> 'not enough participants'));
-        $result = $msg ? array('status' => false, 'msg' => $msg) : array('status' => true);
+            //$this->_cancelTournament(array('error'=> 'not enough payments'));
+        $result = count($msg) > 0 ? array('status' => false, 'msg' => implode("\n", $msg)) : array('status' => true);
         return $result;
     }
 
-    protected static function _createChallengers($participants) {
+
+    protected static function _createChallengers($payments) {
         //create challengers;
         $challengers = array();
-        foreach($participants as $participant){
+        foreach($payments as $payment){
             $challenger = new TournamentChallenger();
             $challenger->fromArray(array(
                        'status'     => \ObjectValues\ChallengerStatus::INITIAL,
-                       'player_id'  => $participant->getPlayerId()
+                       'player_id'  => $payment->getPlayerId()
                        ));
             $challengers[] = $challenger;
         }
@@ -137,19 +142,23 @@ class TournamentBuilder
      * @param array $playerIds 
      * @param int $type 
      * @param array $options 
-     * @static
      * @return void
      */
-    public static function create(TournamentRegistration $registration, $type, array $options = array()) {
+    public static function create(TournamentRegistration $registration, array $options = array()) {
         //$game = $registration->getGame();
-        $rules = array_merge($registration->getRules(), TournamentRules::getConfig($type));
-        $participants = $registration->getParticipants();
-        $result = self::_checkRequirements($participants, $rules);
+        $rules = array_merge($registration->getRules(), TournamentRules::getConfig($registration->getTournamentType()));
+        $payments = $registration->getPayments();
+        $result = self::_checkRequirements($payments, $rules);
         if($result['status']) {
 
-            $nbRounds = strlen(decbin(count($participants)) -1);
+            if($registration->getTournamentType() === TournamentTypes::THREE) {
+                $nbRounds = strlen(decbin(count($payments)) -1);
+            } else {
+                $nbRounds = $registration->getRule('rounds') ?: 1; 
+            }
+            $registration->setRule('rounds', $nbRounds );
             $challenges  = self::_createChallenges($nbRounds);
-            $challengers = self::_createChallengers($participants);
+            $challengers = self::_createChallengers($payments);
 
 
             shuffle($challengers);
@@ -166,16 +175,14 @@ class TournamentBuilder
             $tournament = new \Documents\Tournament();
             $tournament->fromArray(array(
                         //'game' => $game,
-                        'type' => $type,
                         'challenges' => $challenges,
                         'registration_id' => $registration->getId(),
                         ));
-            //$tournament->setRule('rounds', $nbRounds );
-            $tournament->setRounds($nbRounds);
+            //$tournament->setRounds($nbRounds);
 
             // distribution
             // TODO: should be an optional rule defined from outside
-            $registration->setRule('distribution', self::_calculatePrizeDistribution($tournament->getRounds()));
+            $registration->setRule('distribution', self::_calculatePrizeDistribution($nbRounds));
 
             //set tournament as launched
             return $tournament;
