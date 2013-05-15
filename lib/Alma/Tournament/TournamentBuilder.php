@@ -127,7 +127,7 @@ class TournamentBuilder
             }
 
             $this->odm->flush(array('safe' => true, 'fsync' => true));
-            foreach($firstRoundChallenges as $challenge){
+            foreach($firstRoundChallenges as $challenge) {
                 if ($challenge->getStatus() == ChallengeStates::FINISHED) {
                     $this->finishChallenge($challenge);
                 }
@@ -147,7 +147,7 @@ class TournamentBuilder
     public static function create(TournamentRegistration $registration, array $options = array()) {
         //$game = $registration->getGame();
         $rules = array_merge($registration->getRules(), TournamentRules::getConfig($registration->getTournamentType()));
-        $payments = $registration->getPayments();
+        $payments = $registration->getPayments()->toArray();
         $result = self::_checkRequirements($payments, $rules);
         if($result['status']) {
 
@@ -177,6 +177,7 @@ class TournamentBuilder
                         //'game' => $game,
                         'challenges' => $challenges,
                         'registration_id' => $registration->getId(),
+                        'type' => $registration->getTournamentType(),
                         ));
             //$tournament->setRounds($nbRounds);
 

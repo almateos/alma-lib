@@ -81,7 +81,11 @@ class RegistrationHelper
         elseif($registration->getPayment($playerId)) $error = 'participating';
         // else subscribe player + lock his money
         else {
-            $lockResult = self::_lock($orm, $playerId, array('total' => $registration->getPrice(), 'commission' => $registration->getFee()), $registration);
+            if($registration->getPrice() > 0) {
+                $amount = array('total' => $registration->getPrice(), 'commission' => $registration->getFee());
+                $lockResult = self::_lock($orm, $playerId, $amount, $registration);
+            } else $lockResult = true;
+
             if ($lockResult) {
                 $payment = new TournamentPayment();
                 $payment->fromArray(array(
@@ -105,11 +109,14 @@ class RegistrationHelper
      */
     public static function unsubscribe($orm, TournamentRegistration $registration, $playerId) {
         $error = false;
-        if(!$registration->getPayment($playerId)) $error = 'not_participating';
+        $payment = $registration->getPayment($playerId);
+        if(!$payment) $error = 'not_participating';
         elseif(in_array($registration->getStatus(), array(TournamentRegistrationModes::CLOSED, TournamentRegistrationModes::SUBSCRIPTION_ONLY))) $error = 'closed';
         else {
-            $lockResult = self::_cancelLocks($orm, array($playerId), $registration);
-            if (!$lockResult) $error = 'bank';
+            if($payment->getType() === TournamentPaymentTypes::MONEY) {
+                $lockResult = self::_cancelLocks($orm, array($playerId), $registration);
+                if (!$lockResult) $error = 'bank';
+            }
         }
         return $error ? array('status' => false, 'msg' => self::$_messages[$error], 'error' => $error) : array('status' => true);
     }
